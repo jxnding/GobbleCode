@@ -45,7 +45,7 @@ function timeAgo(iso: string): string {
   return `${hr}h ago`;
 }
 
-export default function SubagentPanel() {
+export function SubagentPanel() {
   const { subagents, selectedId, selectSubagent, togglePanel, getStats, getRecentActivity } =
     useSubagentStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
