@@ -1,7 +1,8 @@
-import { readFile, writeFile, mkdir } from "node:fs/promises";
+import { readFile, writeFile, mkdir, stat } from "node:fs/promises";
 import { join, relative } from "node:path";
 import { glob } from "glob";
 import type { EmbeddingProvider, SemanticIndex, EmbeddedChunk, SemanticSearchResult } from "./types.js";
+import { SemanticIndexSchema } from "./types.js";
 
 const CHUNK_SIZE = 512; // tokens approx
 const CHUNK_OVERLAP = 64;
@@ -43,6 +44,12 @@ export class SemanticIndexer {
     const texts = chunks.map((c) => c.content);
     const embeddings = await this.provider.embedBatch(texts);
 
+    if (embeddings.length !== chunks.length) {
+      throw new Error(
+        `Embedding count mismatch: expected ${chunks.length}, got ${embeddings.length}`,
+      );
+    }
+
     for (let i = 0; i < chunks.length; i++) {
       chunks[i].embedding = embeddings[i];
     }
@@ -52,7 +59,7 @@ export class SemanticIndexer {
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       provider: this.provider.name,
-      model: "",
+      model: this.provider.model,
       chunks,
       stats: {
         totalChunks: chunks.length,
@@ -73,7 +80,8 @@ export class SemanticIndexer {
     try {
       const indexPath = join(this.projectRoot, ".gobblecode", INDEX_FILE);
       const data = await readFile(indexPath, "utf-8");
-      return JSON.parse(data);
+      const parsed = JSON.parse(data);
+      return SemanticIndexSchema.parse(parsed);
     } catch {
       return null;
     }
@@ -128,7 +136,23 @@ export class SemanticIndexer {
       files.push(...matches);
     }
 
-    return [...new Set(files)];
+    const unique = [...new Set(files)];
+    return this.filterBySize(unique);
+  }
+
+  private async filterBySize(files: string[]): Promise<string[]> {
+    const MAX_FILE_SIZE = 100 * 1024; // 100KB
+    const filesWithSize = await Promise.all(
+      files.map(async (f) => {
+        try {
+          const s = await stat(f);
+          return { path: f, size: s.size };
+        } catch {
+          return { path: f, size: Infinity };
+        }
+      }),
+    );
+    return filesWithSize.filter((f) => f.size <= MAX_FILE_SIZE).map((f) => f.path);
   }
 
   private chunkFile(filePath: string, content: string): EmbeddedChunk[] {
@@ -169,6 +193,7 @@ export class SemanticIndexer {
       normB += b[i] * b[i];
     }
 
-    return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    const denominator = Math.sqrt(normA) * Math.sqrt(normB);
+    return denominator === 0 ? 0 : dotProduct / denominator;
   }
 }

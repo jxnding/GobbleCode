@@ -3,8 +3,8 @@ import type { OllamaConfig } from "../../config/types.js";
 
 export class OllamaEmbeddingProvider implements EmbeddingProvider {
   name = "ollama";
+  model: string;
   private baseUrl: string;
-  private model: string;
 
   constructor(config: OllamaConfig) {
     this.baseUrl = config.baseUrl;
@@ -26,12 +26,23 @@ export class OllamaEmbeddingProvider implements EmbeddingProvider {
     return data.embedding;
   }
 
-  async embedBatch(texts: string[]): Promise<number[][]> {
-    // Ollama doesn't support batch, so we do them sequentially
-    const results: number[][] = [];
-    for (const text of texts) {
-      results.push(await this.embed(text));
-    }
+  async embedBatch(texts: string[], concurrency = 5): Promise<number[][]> {
+    const results: number[][] = new Array(texts.length);
+    let i = 0;
+
+    const worker = async () => {
+      while (i < texts.length) {
+        const idx = i++;
+        results[idx] = await this.embed(texts[idx]);
+      }
+    };
+
+    const workers = Array.from(
+      { length: Math.min(concurrency, texts.length) },
+      () => worker(),
+    );
+    await Promise.all(workers);
+
     return results;
   }
 }

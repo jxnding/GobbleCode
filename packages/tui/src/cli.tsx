@@ -13,7 +13,7 @@ yargs(hideBin(process.argv))
     async () => {
       const config = await configManager.load();
       if (!config.semantic) {
-        console.error("Semantic config not found. Run 'gobblecode setup' first.");
+        console.error("Run 'gobblecode setup' first to configure semantic search.");
         process.exit(1);
       }
 
@@ -39,7 +39,7 @@ yargs(hideBin(process.argv))
     async (argv) => {
       const config = await configManager.load();
       if (!config.semantic) {
-        console.error("Semantic config not found. Run 'gobblecode index' first.");
+        console.error("Run 'gobblecode setup' first to configure semantic search.");
         process.exit(1);
       }
 

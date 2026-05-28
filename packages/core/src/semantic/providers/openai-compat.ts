@@ -3,9 +3,9 @@ import type { OpenAICompatConfig } from "../../config/types.js";
 
 export class OpenAICompatEmbeddingProvider implements EmbeddingProvider {
   name = "openai-compat";
+  model: string;
   private baseUrl: string;
   private apiKey: string;
-  private model: string;
 
   constructor(config: OpenAICompatConfig) {
     this.baseUrl = config.baseUrl;
