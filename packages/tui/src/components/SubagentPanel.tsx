@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Box, Text, useInput } from "ink";
 import chalk from "chalk";
 import { useSubagentStore } from "../stores/subagentStore.js";
+import { formatTokens, formatCost, timeAgo } from "../utils/format.js";
 
 const STATUS_ICONS: Record<string, string> = {
   running: "⚡",
@@ -26,35 +27,22 @@ function statusColor(status: string, text: string): string {
   }
 }
 
-function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
-  return String(n);
-}
-
-function formatCost(n: number): string {
-  return `$${n.toFixed(2)}`;
-}
-
-function timeAgo(iso: string): string {
-  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
-  if (sec < 60) return `${sec}s ago`;
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min}m ago`;
-  const hr = Math.floor(min / 60);
-  return `${hr}h ago`;
-}
-
 export function SubagentPanel() {
-  const { subagents, selectedId, selectSubagent, togglePanel, getStats, getRecentActivity } =
+  const { subagents, selectSubagent, togglePanel, getStats, getRecentActivity } =
     useSubagentStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
+
+  // Fix: clamp selectedIndex when subagents list shrinks
+  useEffect(() => {
+    setSelectedIndex((i) => Math.min(i, Math.max(0, subagents.length - 1)));
+  }, [subagents.length]);
 
   const stats = getStats();
   const recent = getRecentActivity(6);
 
   useInput((input, key) => {
-    if (input === "q" || key.tab) {
+    // Tab removed — AppContent handles Tab to toggle open/close
+    if (input === "q") {
       togglePanel();
       return;
     }

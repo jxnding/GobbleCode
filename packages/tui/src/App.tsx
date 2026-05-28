@@ -12,8 +12,10 @@ function AppContent() {
   const [mode, setMode] = useState<"chat" | "agent" | "settings">("chat");
   const { panelOpen, togglePanel } = useSubagentStore();
 
+  // Only handle Tab to open the panel. SubagentPanel handles 'q' to close.
+  // This avoids double-toggle when both components handle Tab.
   useInput((input, key) => {
-    if (key.tab) {
+    if (key.tab && !panelOpen) {
       togglePanel();
     }
   });

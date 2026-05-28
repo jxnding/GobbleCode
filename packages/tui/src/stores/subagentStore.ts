@@ -48,7 +48,6 @@ interface SubagentStoreState {
   subagents: Subagent[];
   selectedId: string | null;
   panelOpen: boolean;
-  filterStatus: SubagentStatus | null;
 
   addSubagent: (subagent: Subagent) => void;
   removeSubagent: (id: string) => void;
@@ -59,7 +58,6 @@ interface SubagentStoreState {
   completeTask: (subagentId: string, taskId: string, output: string, tokens: number, cost: number) => void;
   selectSubagent: (id: string | null) => void;
   togglePanel: () => void;
-  setFilterStatus: (status: SubagentStatus | null) => void;
   getStats: () => SubagentStats;
   getRecentActivity: (limit?: number) => { subagent: Subagent; task: SubagentTask }[];
   getSubagentsByParent: (parentId: string) => Subagent[];
@@ -190,7 +188,6 @@ function SubagentProvider({ children }: { children: ReactNode }) {
   const [subagents, setSubagents] = useState<Subagent[]>(DEMO_SUBAGENTS);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [panelOpen, setPanelOpen] = useState(false);
-  const [filterStatus, setFilterStatus] = useState<SubagentStatus | null>(null);
 
   const nowIso = () => new Date().toISOString();
 
@@ -236,6 +233,8 @@ function SubagentProvider({ children }: { children: ReactNode }) {
       setSubagents((prev) =>
         prev.map((a) => {
           if (a.id !== subagentId) return a;
+          const task = a.tasks.find(t => t.id === taskId);
+          if (!task || task.status === "completed") return a; // Already completed, skip
           const tasks = a.tasks.map((t) =>
             t.id === taskId
               ? { ...t, status: "completed" as SubagentStatus, completedAt: nowIso(), output, tokensUsed: tokens, cost }
@@ -274,7 +273,7 @@ function SubagentProvider({ children }: { children: ReactNode }) {
 
     const agentUsage: SubagentStats["agentUsage"] = {};
     for (const a of subagents) {
-      agentUsage[a.name] = {
+      agentUsage[a.id] = {
         tasks: a.tasks.length,
         tokens: a.totalTokens,
         cost: a.totalCost,
@@ -321,7 +320,6 @@ function SubagentProvider({ children }: { children: ReactNode }) {
       subagents,
       selectedId,
       panelOpen,
-      filterStatus,
       addSubagent,
       removeSubagent,
       updateSubagent,
@@ -331,7 +329,6 @@ function SubagentProvider({ children }: { children: ReactNode }) {
       completeTask,
       selectSubagent,
       togglePanel,
-      setFilterStatus,
       getStats,
       getRecentActivity,
       getSubagentsByParent,
@@ -340,7 +337,6 @@ function SubagentProvider({ children }: { children: ReactNode }) {
       subagents,
       selectedId,
       panelOpen,
-      filterStatus,
       addSubagent,
       removeSubagent,
       updateSubagent,

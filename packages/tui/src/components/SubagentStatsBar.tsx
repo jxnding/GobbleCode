@@ -1,20 +1,18 @@
 import { Box, Text } from "ink";
 import chalk from "chalk";
 import { useSubagentStore } from "../stores/subagentStore.js";
-
-function formatTokens(tokens: number): string {
-  if (tokens >= 1_000_000) return `${(tokens / 1_000_000).toFixed(1)}M`;
-  if (tokens >= 1_000) return `${(tokens / 1_000).toFixed(1)}K`;
-  return `${tokens}`;
-}
+import { formatTokens } from "../utils/format.js";
 
 export function SubagentStatsBar() {
-  const { getStats } = useSubagentStore();
+  const { subagents, getStats } = useSubagentStore();
   const stats = getStats();
 
-  const mostUsed = Object.entries(stats.agentUsage)
+  const mostUsedId = Object.entries(stats.agentUsage)
     .sort((a, b) => b[1].tasks - a[1].tasks)
-    .map(([name]) => name)[0];
+    .map(([id]) => id)[0];
+  const mostUsedName = mostUsedId
+    ? subagents.find((a) => a.id === mostUsedId)?.name ?? mostUsedId
+    : undefined;
 
   return (
     <Box
@@ -31,7 +29,7 @@ export function SubagentStatsBar() {
       <Text>{chalk.cyan(`✓ ${stats.completedTasks}/${stats.totalTasks}`)}</Text>
       <Text>{chalk.yellow(`◎ ${formatTokens(stats.totalTokens)}`)}</Text>
       <Text>{chalk.magenta(`$${stats.totalCost.toFixed(3)}`)}</Text>
-      {mostUsed && <Text>{chalk.dim.white(mostUsed)}</Text>}
+      {mostUsedName && <Text>{chalk.dim.white(mostUsedName)}</Text>}
       <Text>{chalk.dim("[Tab] Subagents")}</Text>
     </Box>
   );
