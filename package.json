@@ -1,0 +1,31 @@
+{
+  "name": "gobblecode",
+  "version": "0.1.0",
+  "private": true,
+  "description": "GobbleCode - The quirky, flashy AI coding agent",
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "test": "turbo test",
+    "lint": "turbo lint",
+    "typecheck": "turbo typecheck",
+    "gui": "cd packages/gui && npm run dev",
+    "tui": "cd packages/tui && npm run dev",
+    "clean": "turbo clean"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0",
+    "vitest": "^1.6.0",
+    "@vitest/coverage-v8": "^1.6.0",
+    "prettier": "^3.2.0",
+    "eslint": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

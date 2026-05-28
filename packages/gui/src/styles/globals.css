@@ -1,0 +1,274 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* ─── Dark Theme (Dusk) ─── */
+  :root,
+  [data-theme="dark"] {
+    --bg: #1a1814;
+    --bg-elevated: #201c17;
+    --surface: #242018;
+    --surface-hover: #2e2920;
+    --border: #332d24;
+    --border-subtle: #2a2520;
+
+    --text: #e8e0d0;
+    --text-secondary: #c0b8a8;
+    --text-muted: #887e70;
+
+    --accent: #fbbf24;
+    --accent-hover: #f59e0b;
+    --accent-muted: #92700c;
+
+    --success: #4ade80;
+    --warning: #fbbf24;
+    --error: #f87171;
+    --info: #60a5fa;
+
+    --shadow: rgba(0, 0, 0, 0.4);
+    --glow: rgba(251, 191, 36, 0.15);
+  }
+
+  /* ─── Light Theme (Dawn) ─── */
+  [data-theme="light"] {
+    --bg: #faf6ee;
+    --bg-elevated: #f5f0e4;
+    --surface: #f0ead8;
+    --surface-hover: #e8e0ca;
+    --border: #ddd5c0;
+    --border-subtle: #e5ddc8;
+
+    --text: #3d3520;
+    --text-secondary: #5c5240;
+    --text-muted: #8a8070;
+
+    --accent: #d97706;
+    --accent-hover: #b45309;
+    --accent-muted: #f5e6c8;
+
+    --success: #16a34a;
+    --warning: #d97706;
+    --error: #dc2626;
+    --info: #2563eb;
+
+    --shadow: rgba(60, 50, 30, 0.15);
+    --glow: rgba(217, 119, 6, 0.1);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  body {
+    background-color: var(--bg);
+    color: var(--text);
+    font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+@layer components {
+  .glass {
+    background: var(--surface);
+    backdrop-filter: blur(12px);
+    border: 1px solid var(--border);
+  }
+
+  .glow {
+    box-shadow: 0 0 20px var(--glow);
+  }
+
+  .glow-strong {
+    box-shadow: 0 0 40px var(--glow);
+  }
+}
+
+@layer utilities {
+  .wavy-text {
+    animation: wavy 2s ease-in-out infinite;
+    display: inline-block;
+  }
+
+  .wavy-text span {
+    display: inline-block;
+    animation: wavy-letter 2s ease-in-out infinite;
+  }
+
+  .thinking-dots {
+    animation: thinking 1.5s ease-in-out infinite;
+  }
+
+  .gobble-bounce {
+    animation: gobble-bounce 0.6s ease-in-out;
+  }
+
+  .waka {
+    animation: waka 0.3s ease-in-out infinite alternate;
+  }
+}
+
+@keyframes wavy {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
+}
+
+@keyframes wavy-letter {
+  0%, 100% { transform: translateY(0) rotate(0deg); }
+  25% { transform: translateY(-3px) rotate(-2deg); }
+  75% { transform: translateY(3px) rotate(2deg); }
+}
+
+@keyframes thinking {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+@keyframes gobble-bounce {
+  0% { transform: scale(1); }
+  30% { transform: scale(1.2); }
+  50% { transform: scale(0.9); }
+  70% { transform: scale(1.1); }
+  100% { transform: scale(1); }
+}
+
+@keyframes wave-flow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@keyframes waka {
+  0% { clip-path: polygon(100% 50%, 75% 0%, 100% 0%, 100% 100%, 75% 100%); }
+  100% { clip-path: polygon(100% 50%, 75% 25%, 100% 0%, 100% 100%, 75% 75%); }
+}
+
+.wave-gradient {
+  background: linear-gradient(
+    90deg,
+    var(--accent),
+    var(--accent-hover),
+    var(--accent),
+    var(--accent-muted),
+    var(--accent)
+  );
+  background-size: 300% 100%;
+  animation: wave-flow 3s ease-in-out infinite;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent-muted);
+}
+
+/* ReactFlow / Blender-style node editor */
+.react-flow__node {
+  border-radius: 8px;
+  border: none;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.react-flow__node.selected {
+  box-shadow: 0 0 0 2px var(--accent), 0 0 20px var(--glow);
+}
+
+.react-flow__handle {
+  border: 2px solid var(--bg) !important;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.react-flow__handle:hover {
+  transform: scale(1.3);
+  box-shadow: 0 0 8px currentColor;
+}
+
+.react-flow__edge-path {
+  stroke-linecap: round;
+}
+
+.react-flow__edge.selected .react-flow__edge-path {
+  stroke-opacity: 1;
+  stroke-width: 3;
+}
+
+.react-flow__controls {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.react-flow__controls-button {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  color: var(--text);
+  fill: var(--text);
+}
+
+.react-flow__controls-button:hover {
+  background: var(--surface-hover);
+}
+
+.react-flow__minimap {
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px var(--shadow);
+}
+
+.react-flow__background {
+  background: var(--bg);
+}
+
+.react-flow__selection {
+  background: rgba(251, 191, 36, 0.05);
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.react-flow__connection-path {
+  stroke: var(--accent);
+  stroke-width: 2;
+}
+
+.react-flow__attribution {
+  display: none;
+}
+
+/* Range inputs */
+input[type="range"] {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--surface-hover);
+  outline: none;
+}
+
+input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: 2px solid var(--bg);
+  box-shadow: 0 2px 6px var(--shadow);
+}
+
+input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
