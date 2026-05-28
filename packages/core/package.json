@@ -33,6 +33,10 @@
     "./sound": {
       "types": "./dist/sound/index.d.ts",
       "import": "./dist/sound/index.js"
+    },
+    "./semantic": {
+      "types": "./dist/semantic/index.d.ts",
+      "import": "./dist/semantic/index.js"
     }
   },
   "scripts": {
@@ -47,7 +51,8 @@
   "dependencies": {
     "zod": "^3.22.0",
     "effect": "^3.0.0",
-    "uuid": "^9.0.0"
+    "uuid": "^9.0.0",
+    "glob": "^10.3.0"
   },
   "devDependencies": {
     "typescript": "^5.4.0",

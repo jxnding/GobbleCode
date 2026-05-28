@@ -34,7 +34,7 @@ export function Chat() {
 
   return (
     <Box flexDirection="column" flexGrow={1} paddingX={1}>
-      <Box flexDirection="column" flexGrow={1} overflowY="auto">
+      <Box flexDirection="column" flexGrow={1} overflowY="hidden">
         {messages.map((msg, i) => (
           <Box key={i} marginBottom={1}>
             <Text color={msg.role === "user" ? "orange" : "cyan"} bold>

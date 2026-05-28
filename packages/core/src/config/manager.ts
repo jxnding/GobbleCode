@@ -60,6 +60,11 @@ export class ConfigManager {
     await this.save();
   }
 
+  async updateSemantic(semantic: Partial<GobbleCodeConfig["semantic"]>): Promise<void> {
+    this.config.semantic = { ...this.config.semantic, ...semantic } as any;
+    await this.save();
+  }
+
   getConfigPath(): string {
     return this.configPath;
   }

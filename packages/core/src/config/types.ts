@@ -70,6 +70,29 @@ export const BrowserConfigSchema = z.object({
 });
 export type BrowserConfig = z.infer<typeof BrowserConfigSchema>;
 
+export const SemanticProviderSchema = z.enum(["ollama", "openai-compat"]);
+export type SemanticProvider = z.infer<typeof SemanticProviderSchema>;
+
+export const OllamaConfigSchema = z.object({
+  baseUrl: z.string().url().default("http://localhost:11434"),
+  model: z.string().default("nomic-embed-text"),
+});
+export type OllamaConfig = z.infer<typeof OllamaConfigSchema>;
+
+export const OpenAICompatConfigSchema = z.object({
+  baseUrl: z.string().url(),
+  apiKey: z.string(),
+  model: z.string().default("text-embedding-3-small"),
+});
+export type OpenAICompatConfig = z.infer<typeof OpenAICompatConfigSchema>;
+
+export const SemanticConfigSchema = z.object({
+  provider: SemanticProviderSchema.default("ollama"),
+  ollama: OllamaConfigSchema.optional(),
+  openaiCompat: OpenAICompatConfigSchema.optional(),
+});
+export type SemanticConfig = z.infer<typeof SemanticConfigSchema>;
+
 export const GobbleCodeConfigSchema = z.object({
   version: z.string(),
   providers: z.record(ModelProviderSchema),
@@ -81,6 +104,7 @@ export const GobbleCodeConfigSchema = z.object({
   sound: SoundConfigSchema,
   sync: SyncConfigSchema,
   browser: BrowserConfigSchema,
+  semantic: SemanticConfigSchema.optional(),
   disabledProviders: z.array(z.string()).optional(),
 });
 export type GobbleCodeConfig = z.infer<typeof GobbleCodeConfigSchema>;
@@ -120,5 +144,12 @@ export const DEFAULT_CONFIG: GobbleCodeConfig = {
     ],
     autoSearch: true,
     maxResults: 5,
+  },
+  semantic: {
+    provider: "ollama",
+    ollama: {
+      baseUrl: "http://localhost:11434",
+      model: "nomic-embed-text",
+    },
   },
 };
