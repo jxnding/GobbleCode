@@ -36,8 +36,8 @@ function formatCost(n: number): string {
   return `$${n.toFixed(2)}`;
 }
 
-function timeAgo(ts: number): string {
-  const sec = Math.floor((Date.now() - ts) / 1000);
+function timeAgo(iso: string): string {
+  const sec = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
   if (sec < 60) return `${sec}s ago`;
   const min = Math.floor(sec / 60);
   if (min < 60) return `${min}m ago`;
@@ -46,46 +46,35 @@ function timeAgo(ts: number): string {
 }
 
 export default function SubagentPanel() {
-  const { agents, selectedId, setSelectedId, getRecentActivity } =
+  const { subagents, selectedId, selectSubagent, togglePanel, getStats, getRecentActivity } =
     useSubagentStore();
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [closed, setClosed] = useState(false);
 
-  const list = Object.values(agents);
+  const stats = getStats();
   const recent = getRecentActivity(6);
-
-  const activeCount = list.filter((a) => a.status === "running").length;
-  const totalTasks = list.reduce((s, a) => s + (a.tasksCompleted ?? 0), 0);
-  const totalAssigned = list.reduce((s, a) => s + (a.tasksAssigned ?? 0), 0);
-  const totalTokens = list.reduce((s, a) => s + (a.tokensUsed ?? 0), 0);
-  const totalCost = list.reduce((s, a) => s + (a.cost ?? 0), 0);
 
   useInput((input, key) => {
     if (input === "q" || key.tab) {
-      setClosed((c) => !c);
+      togglePanel();
       return;
     }
-    if (closed) return;
-
     if (input === "j" || key.downArrow) {
-      setSelectedIndex((i) => Math.min(i + 1, list.length - 1));
+      setSelectedIndex((i) => Math.min(i + 1, subagents.length - 1));
     }
     if (input === "k" || key.upArrow) {
       setSelectedIndex((i) => Math.max(i - 1, 0));
     }
-    if (key.return && list[selectedIndex]) {
-      setSelectedId(list[selectedIndex].id);
+    if (key.return && subagents[selectedIndex]) {
+      selectSubagent(subagents[selectedIndex].id);
     }
   });
-
-  if (closed) return null;
 
   return (
     <Box flexDirection="column" borderStyle="single" borderColor="cyan" paddingX={1}>
       {/* Header */}
       <Box justifyContent="space-between">
         <Text>
-          {chalk.bold.cyan("Subagents")} {chalk.gray(`(${list.length})`)}
+          {chalk.bold.cyan("Subagents")} {chalk.gray(`(${stats.totalAgents})`)}
         </Text>
         <Text>{chalk.gray("[Tab] Close")}</Text>
       </Box>
@@ -94,52 +83,51 @@ export default function SubagentPanel() {
       <Box>
         <Text>
           {chalk.cyan("Active:")}
-          {chalk.green(` ${activeCount}`)}
+          {chalk.green(` ${stats.activeAgents}`)}
           {chalk.gray(" | ")}
           {chalk.cyan("Tasks:")}
-          {chalk.yellow(` ${totalTasks}/${totalAssigned}`)}
+          {chalk.yellow(` ${stats.completedTasks}/${stats.totalTasks}`)}
           {chalk.gray(" | ")}
           {chalk.cyan("Tokens:")}
-          {chalk.yellow(` ${formatTokens(totalTokens)}`)}
+          {chalk.yellow(` ${formatTokens(stats.totalTokens)}`)}
           {chalk.gray(" | ")}
           {chalk.cyan("Cost:")}
-          {chalk.magenta(` ${formatCost(totalCost)}`)}
+          {chalk.magenta(` ${formatCost(stats.totalCost)}`)}
         </Text>
       </Box>
 
-      {/* Divider */}
       <Text>{chalk.gray("─".repeat(40))}</Text>
 
       {/* Agent list */}
       <Box flexDirection="column" minHeight={1}>
-        {list.length === 0 && (
+        {subagents.length === 0 && (
           <Text>{chalk.gray("No subagents")}</Text>
         )}
-        {list.map((agent, i) => {
+        {subagents.map((agent, i) => {
           const icon = STATUS_ICONS[agent.status] ?? " ";
           const isSelected = i === selectedIndex;
           const prefix = isSelected ? chalk.cyan("▸ ") : "  ";
           const name = statusColor(agent.status, agent.name);
-          const role = chalk.gray(agent.role ? ` [${agent.role}]` : "");
+          const role = chalk.gray(` [${agent.role}]`);
           const task =
             agent.status === "running" && agent.currentTask
               ? chalk.gray(` → ${agent.currentTask}`)
               : "";
-          const stats = chalk.yellow(` ${formatTokens(agent.tokensUsed ?? 0)}`) +
-            chalk.magenta(` ${formatCost(agent.cost ?? 0)}`);
+          const statsStr =
+            chalk.yellow(` ${formatTokens(agent.totalTokens)}`) +
+            chalk.magenta(` ${formatCost(agent.totalCost)}`);
           return (
             <Text key={agent.id}>
               {prefix}
               {statusColor(agent.status, icon)} {name}
               {role}
               {task}
-              {stats}
+              {statsStr}
             </Text>
           );
         })}
       </Box>
 
-      {/* Divider */}
       <Text>{chalk.gray("─".repeat(40))}</Text>
 
       {/* Recent Activity */}
@@ -148,10 +136,10 @@ export default function SubagentPanel() {
         {recent.length === 0 && (
           <Text>{chalk.gray("No recent activity")}</Text>
         )}
-        {recent.map((act, i) => (
+        {recent.map(({ subagent, task }, i) => (
           <Text key={i}>
-            {chalk.white(act.agentName)} {chalk.gray("→")} {act.description}{" "}
-            {chalk.gray(`(${timeAgo(act.timestamp)}, ${formatTokens(act.tokensUsed ?? 0)} tok)`)}
+            {chalk.white(subagent.name)} {chalk.gray("→")} {task.description}{" "}
+            {chalk.gray(`(${timeAgo(task.startedAt)}, ${formatTokens(task.tokensUsed)} tok)`)}
           </Text>
         ))}
       </Box>
