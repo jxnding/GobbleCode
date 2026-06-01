@@ -40,8 +40,8 @@ export class ConfigManager {
     return this.config;
   }
 
-  async updateTheme(theme: Partial<GobbleCodeConfig["theme"]>): Promise<void> {
-    this.config.theme = { ...this.config.theme, ...theme };
+  async updateTheme(theme: GobbleCodeConfig["theme"]): Promise<void> {
+    this.config.theme = theme;
     await this.save();
   }
 

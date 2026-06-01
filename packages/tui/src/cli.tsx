@@ -21,7 +21,7 @@ yargs(hideBin(process.argv))
       const manager = new SemanticManager(config.semantic, projectRoot);
 
       console.log("Building semantic index...");
-      const index = await manager.buildIndex((msg) => console.log(msg));
+      const index = await manager.buildIndex((msg: string) => console.log(msg));
       console.log(
         `\nDone! Indexed ${index.stats.totalChunks} chunks from ${index.stats.totalFiles} files.`
       );

@@ -1,8 +1,9 @@
 export * from "./agents/index.js";
+export type { SoundConfig as SoundEffectConfig, SoundEffect, SoundEvent } from "./sound/index.js";
+export { SoundEffectSchema, SoundEventSchema } from "./sound/index.js";
 export * from "./config/index.js";
 export * from "./skills/index.js";
 export * from "./search/index.js";
-export * from "./sound/index.js";
 export * from "./sync/index.js";
 export * from "./semantic/index.js";
 
