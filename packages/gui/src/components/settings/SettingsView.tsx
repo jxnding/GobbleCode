@@ -233,6 +233,14 @@ function AppearanceSettings({
   theme: Theme;
   setTheme: (t: Theme) => void;
 }) {
+  const [accent, setAccent] = useState("#fbbf24");
+
+  const selectAccent = (color: string) => {
+    setAccent(color);
+    document.documentElement.style.setProperty("--accent", color);
+    document.documentElement.style.setProperty("--accent-hover", color);
+  };
+
   const themes = [
     {
       id: "dark" as Theme,
@@ -382,10 +390,15 @@ function AppearanceSettings({
               key={color}
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
+              onClick={() => selectAccent(color)}
               className="group flex flex-col items-center gap-1"
             >
               <div
-                className="w-10 h-10 rounded-full border-2 border-transparent hover:border-white/30 transition-colors"
+                className={`w-10 h-10 rounded-full border-2 transition-all ${
+                  accent === color
+                    ? "border-[var(--text)] scale-110"
+                    : "border-transparent hover:border-white/30"
+                }`}
                 style={{ backgroundColor: color }}
               />
               <span className="text-[10px] text-[var(--text-muted)] group-hover:text-[var(--text)]">
