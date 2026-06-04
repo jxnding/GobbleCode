@@ -1,5 +1,43 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "path";
+import { readFile } from "fs/promises";
+import { homedir } from "os";
+
+interface ConfiguredModel {
+  id: string;
+  name: string;
+  provider: string;
+  maxTokens?: number;
+}
+
+// Flatten the user's configured providers into selectable models. A provider
+// only contributes models once it has been set up with real options (endpoint
+// / api key), so anything returned here is a model the user can actually run.
+async function loadConfiguredModels(): Promise<ConfiguredModel[]> {
+  const configPath = join(homedir(), ".config", "gobblecode", "gobblecode.json");
+  try {
+    const raw = await readFile(configPath, "utf-8");
+    const config = JSON.parse(raw);
+    const providers = config?.providers ?? {};
+    const models: ConfiguredModel[] = [];
+    for (const [providerId, provider] of Object.entries<any>(providers)) {
+      const options = provider?.options ?? {};
+      const isConfigured = Object.keys(options).length > 0;
+      if (!isConfigured) continue;
+      for (const [modelId, model] of Object.entries<any>(provider?.models ?? {})) {
+        models.push({
+          id: modelId,
+          name: model?.name ?? modelId,
+          provider: provider?.name ?? providerId,
+          maxTokens: model?.maxTokens,
+        });
+      }
+    }
+    return models;
+  } catch {
+    return [];
+  }
+}
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -69,3 +107,5 @@ ipcMain.handle("window:close", () => {
 ipcMain.handle("shell:openExternal", (_, url: string) => {
   shell.openExternal(url);
 });
+
+ipcMain.handle("config:getModels", () => loadConfiguredModels());

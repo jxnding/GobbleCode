@@ -19,6 +19,7 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
   const [showTools, setShowTools] = useState(false);
   const updateNodeModel = useAgentStore((s) => s.updateNodeModel);
   const selectNode = useAgentStore((s) => s.selectNode);
+  const realModels = useAgentStore((s) => s.realModels);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleModelChange = (model: AgentModel) => {
@@ -152,7 +153,7 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
                 }}
               >
                 <div className="p-1 max-h-48 overflow-y-auto">
-                  {AVAILABLE_MODELS.map((model) => (
+                  {realModels.map((model) => (
                     <button
                       key={model.id}
                       onClick={(e) => {
@@ -173,6 +174,28 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
                         <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
                       )}
                     </button>
+                  ))}
+
+                  {realModels.length === 0 && (
+                    <div className="text-[10px] text-white/30 px-2 py-1 leading-relaxed">
+                      No models configured. Add a provider with an API key to enable models.
+                    </div>
+                  )}
+
+                  <div className="text-[9px] text-white/25 uppercase tracking-wider px-2 pt-2 pb-1">
+                    Demo models
+                  </div>
+                  {AVAILABLE_MODELS.map((model) => (
+                    <div
+                      key={model.id}
+                      title="Demo model — add a provider with an API key to enable it"
+                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left opacity-40 cursor-not-allowed"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs truncate">{model.name}</div>
+                        <div className="text-[10px] text-white/40">{model.provider}</div>
+                      </div>
+                    </div>
                   ))}
                 </div>
               </motion.div>

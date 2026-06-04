@@ -5,4 +5,5 @@ contextBridge.exposeInMainWorld("electronAPI", {
   maximize: () => ipcRenderer.invoke("window:maximize"),
   close: () => ipcRenderer.invoke("window:close"),
   openExternal: (url: string) => ipcRenderer.invoke("shell:openExternal", url),
+  getModels: () => ipcRenderer.invoke("config:getModels"),
 });

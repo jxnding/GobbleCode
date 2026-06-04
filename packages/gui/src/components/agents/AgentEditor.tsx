@@ -1,4 +1,4 @@
-import { useCallback, useMemo } from "react";
+import { useCallback, useEffect, useMemo } from "react";
 import ReactFlow, {
   Background,
   Controls,
@@ -44,6 +44,11 @@ export function AgentEditor() {
   const addEdgeToStore = useAgentStore((s) => s.addEdge);
   const updateNodePosition = useAgentStore((s) => s.updateNodePosition);
   const selectedNode = useAgentStore((s) => s.selectedNode);
+  const loadModels = useAgentStore((s) => s.loadModels);
+
+  useEffect(() => {
+    loadModels();
+  }, [loadModels]);
 
   // Convert store nodes to ReactFlow nodes
   const nodes = useMemo(

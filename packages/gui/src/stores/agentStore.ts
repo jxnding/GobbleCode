@@ -123,6 +123,8 @@ export interface AgentStore {
   nodes: AgentNodeData[];
   edges: AgentEdge[];
   selectedNode: string | null;
+  realModels: AgentModel[];
+  loadModels: () => Promise<void>;
   addNode: (role: AgentRole, position?: { x: number; y: number }) => void;
   removeNode: (id: string) => void;
   updateNode: (id: string, updates: Partial<AgentNodeData>) => void;
@@ -214,6 +216,19 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     },
   ],
   selectedNode: null,
+  realModels: [],
+
+  loadModels: async () => {
+    const api = (window as unknown as { electronAPI?: { getModels?: () => Promise<AgentModel[]> } })
+      .electronAPI;
+    if (!api?.getModels) return;
+    try {
+      const models = await api.getModels();
+      if (Array.isArray(models)) set({ realModels: models });
+    } catch {
+      // ignore — fall back to no configured models
+    }
+  },
 
   addNode: (role, position) => {
     const config = ROLE_CONFIG[role];
@@ -249,7 +264,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   },
 
   updateNodeModel: (id, modelId) => {
-    const model = AVAILABLE_MODELS.find((m) => m.id === modelId);
+    const model = [...get().realModels, ...AVAILABLE_MODELS].find((m) => m.id === modelId);
     if (model) {
       set((state) => ({
         nodes: state.nodes.map((n) => (n.id === id ? { ...n, model } : n)),
