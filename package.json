@@ -13,7 +13,7 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "gui": "cd packages/gui && npm run dev",
-    "tui": "cd packages/tui && npm run dev",
+    "tui": "cd packages/tui && npm run build && npm run start",
     "clean": "turbo clean"
   },
   "devDependencies": {

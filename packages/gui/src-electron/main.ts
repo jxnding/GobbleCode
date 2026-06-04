@@ -1,6 +1,5 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "path";
-import { is } from "@electron-toolkit/utils";
 
 let mainWindow: BrowserWindow | null = null;
 
@@ -30,8 +29,8 @@ function createWindow(): void {
     return { action: "deny" };
   });
 
-  if (is.dev && process.env["ELECTRON_RENDERER_URL"]) {
-    mainWindow.loadURL(process.env["ELECTRON_RENDERER_URL"]);
+  if (process.env["VITE_DEV_SERVER_URL"]) {
+    mainWindow.loadURL(process.env["VITE_DEV_SERVER_URL"]);
   } else {
     mainWindow.loadFile(join(__dirname, "../dist/index.html"));
   }

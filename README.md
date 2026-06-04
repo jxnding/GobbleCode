@@ -56,17 +56,17 @@ GobbleCode is a fork/inspired version of OpenCode with enhanced features, a flas
 git clone https://github.com/yourusername/gobblecode.git
 cd gobblecode
 
-# Install dependencies
-npm install
+# Install dependencies (this is a pnpm workspace)
+pnpm install
 
 # Build all packages
-npm run build
+pnpm build
 
-# Run the GUI
-npm run gui
+# Run the GUI (Electron + Vite dev server)
+pnpm gui
 
-# Run the TUI
-npm run tui
+# Run the TUI (builds, then launches the Ink interface)
+pnpm tui
 ```
 
 ### Development

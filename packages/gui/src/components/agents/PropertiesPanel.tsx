@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Cpu, Wrench, FileText, Trash2 } from "lucide-react";
-import { useAgentStore, AVAILABLE_MODELS } from "../../../stores/agentStore.js";
+import { useAgentStore, AVAILABLE_MODELS } from "../../stores/agentStore.js";
 
 export function PropertiesPanel() {
   const selectedNode = useAgentStore((s) => s.selectedNode);

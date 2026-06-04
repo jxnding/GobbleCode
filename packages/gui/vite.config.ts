@@ -16,6 +16,17 @@ export default defineConfig({
           },
         },
       },
+      {
+        entry: "src-electron/preload.ts",
+        onstart(args) {
+          args.reload();
+        },
+        vite: {
+          build: {
+            outDir: "dist-electron",
+          },
+        },
+      },
     ]),
     renderer(),
   ],

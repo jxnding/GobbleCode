@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
-import type { AgentRole } from "../../../stores/agentStore.js";
-import { useAgentStore } from "../../../stores/agentStore.js";
+import type { AgentRole } from "../../stores/agentStore.js";
+import { useAgentStore } from "../../stores/agentStore.js";
 
 const AVAILABLE_AGENTS: { role: AgentRole; label: string; icon: string; color: string; description: string }[] = [
   {
