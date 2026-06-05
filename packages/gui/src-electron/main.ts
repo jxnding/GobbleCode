@@ -1,45 +1,10 @@
 import { app, BrowserWindow, ipcMain, shell } from "electron";
 import { join } from "path";
-import { readFile } from "fs/promises";
-import { homedir } from "os";
-
-interface ConfiguredModel {
-  id: string;
-  name: string;
-  provider: string;
-  maxTokens?: number;
-}
-
-// Flatten the user's configured providers into selectable models. A provider
-// only contributes models once it has been set up with real options (endpoint
-// / api key), so anything returned here is a model the user can actually run.
-async function loadConfiguredModels(): Promise<ConfiguredModel[]> {
-  const configPath = join(homedir(), ".config", "gobblecode", "gobblecode.json");
-  try {
-    const raw = await readFile(configPath, "utf-8");
-    const config = JSON.parse(raw);
-    const providers = config?.providers ?? {};
-    const models: ConfiguredModel[] = [];
-    for (const [providerId, provider] of Object.entries<any>(providers)) {
-      const options = provider?.options ?? {};
-      const isConfigured = Object.keys(options).length > 0;
-      if (!isConfigured) continue;
-      for (const [modelId, model] of Object.entries<any>(provider?.models ?? {})) {
-        models.push({
-          id: modelId,
-          name: model?.name ?? modelId,
-          provider: provider?.name ?? providerId,
-          maxTokens: model?.maxTokens,
-        });
-      }
-    }
-    return models;
-  } catch {
-    return [];
-  }
-}
+import { ConfigManager, ModelManager, type GobbleCodeConfig } from "@gobblecode/core";
 
 let mainWindow: BrowserWindow | null = null;
+const configManager = new ConfigManager();
+const modelManager = new ModelManager(configManager);
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
@@ -47,7 +12,6 @@ function createWindow(): void {
     height: 900,
     minWidth: 800,
     minHeight: 600,
-    frame: false,
     titleBarStyle: "hiddenInset",
     webPreferences: {
       preload: join(__dirname, "preload.js"),
@@ -74,7 +38,8 @@ function createWindow(): void {
   }
 }
 
-app.whenReady().then(() => {
+app.whenReady().then(async () => {
+  await configManager.load();
   createWindow();
 
   app.on("activate", () => {
@@ -88,24 +53,28 @@ app.on("window-all-closed", () => {
   }
 });
 
-ipcMain.handle("window:minimize", () => {
-  mainWindow?.minimize();
-});
-
-ipcMain.handle("window:maximize", () => {
-  if (mainWindow?.isMaximized()) {
-    mainWindow.unmaximize();
-  } else {
-    mainWindow?.maximize();
-  }
-});
-
-ipcMain.handle("window:close", () => {
-  mainWindow?.close();
-});
-
 ipcMain.handle("shell:openExternal", (_, url: string) => {
   shell.openExternal(url);
 });
 
-ipcMain.handle("config:getModels", () => loadConfiguredModels());
+ipcMain.handle("config:get", () => configManager.get());
+
+ipcMain.handle("config:update", async (_, updates: Partial<GobbleCodeConfig>) => {
+  return configManager.update(updates);
+});
+
+ipcMain.handle("config:getModels", () => modelManager.listModels());
+
+ipcMain.handle("config:listProviders", () => modelManager.list());
+
+ipcMain.handle("config:updateProvider", async (_, providerId: string, credentials: { apiKey?: string; baseURL?: string }) => {
+  return modelManager.updateProvider(providerId, credentials);
+});
+
+ipcMain.handle("config:setProviderApiKey", async (_, providerId: string, apiKey: string) => {
+  return modelManager.updateProvider(providerId, { apiKey });
+});
+
+ipcMain.handle("config:removeProviderCredentials", async (_, providerId: string) => {
+  return modelManager.removeProviderCredentials(providerId);
+});

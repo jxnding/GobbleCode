@@ -2,6 +2,7 @@ import { motion } from "framer-motion";
 import { Plus } from "lucide-react";
 import type { AgentRole } from "../../stores/agentStore.js";
 import { useAgentStore } from "../../stores/agentStore.js";
+import { hintClass } from "../../lib/hintClass.js";
 
 const AVAILABLE_AGENTS: { role: AgentRole; label: string; icon: string; color: string; description: string }[] = [
   {
@@ -45,7 +46,7 @@ export function NodeSidebar() {
   const addNode = useAgentStore((s) => s.addNode);
 
   return (
-    <div className="w-56 bg-[#111] border-r border-white/5 flex flex-col">
+    <div className={`${hintClass("node-sidebar", "root")} w-56 bg-[#111] border-r border-white/5 flex flex-col`}>
       <div className="p-3 border-b border-white/5">
         <h3 className="text-xs font-semibold text-white/60 uppercase tracking-wider">
           Add Agent
@@ -58,7 +59,7 @@ export function NodeSidebar() {
             whileHover={{ x: 4 }}
             whileTap={{ scale: 0.98 }}
             onClick={() => addNode(agent.role)}
-            className="w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors text-left group"
+            className={`${hintClass("node-sidebar", `add-${agent.role}`)} w-full flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors text-left group`}
           >
             <div
               className="w-8 h-8 rounded-lg flex items-center justify-center text-sm"

@@ -1,6 +1,9 @@
 import { motion } from "framer-motion";
-import { Minus, Square, X, Sun, Moon } from "lucide-react";
+import { Sun, Moon } from "lucide-react";
 import { useState, useEffect } from "react";
+import { hintClass } from "../../lib/hintClass.js";
+
+const isMac = typeof navigator !== "undefined" && navigator.userAgent.includes("Mac");
 
 export function Titlebar() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
@@ -10,7 +13,11 @@ export function Titlebar() {
   }, [theme]);
 
   return (
-    <div className="h-10 flex items-center justify-between px-4 bg-[var(--bg-elevated)] border-b border-[var(--border)] select-none drag">
+    <div
+      className={`${hintClass("titlebar", "root")} h-10 flex items-center justify-between px-4 bg-[var(--bg-elevated)] border-b border-[var(--border)] select-none drag ${
+        isMac ? "pl-20" : ""
+      }`}
+    >
       <div className="flex items-center gap-2 no-drag">
         <motion.svg
           viewBox="0 0 100 100"
@@ -33,7 +40,7 @@ export function Titlebar() {
       <div className="flex items-center gap-1 no-drag">
         <button
           onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-          className="p-1.5 hover:bg-[var(--surface-hover)] rounded transition-colors"
+          className={`${hintClass("titlebar", "theme-toggle")} p-1.5 hover:bg-[var(--surface-hover)] rounded transition-colors`}
           title={theme === "dark" ? "Switch to light" : "Switch to dark"}
         >
           {theme === "dark" ? (
@@ -41,24 +48,6 @@ export function Titlebar() {
           ) : (
             <Moon className="w-4 h-4 text-[var(--text-muted)]" />
           )}
-        </button>
-        <button
-          onClick={() => window.electronAPI?.minimize()}
-          className="p-1.5 hover:bg-[var(--surface-hover)] rounded transition-colors"
-        >
-          <Minus className="w-4 h-4 text-[var(--text-muted)]" />
-        </button>
-        <button
-          onClick={() => window.electronAPI?.maximize()}
-          className="p-1.5 hover:bg-[var(--surface-hover)] rounded transition-colors"
-        >
-          <Square className="w-3.5 h-3.5 text-[var(--text-muted)]" />
-        </button>
-        <button
-          onClick={() => window.electronAPI?.close()}
-          className="p-1.5 hover:bg-[var(--error)]/20 rounded transition-colors"
-        >
-          <X className="w-4 h-4 text-[var(--text-muted)]" />
         </button>
       </div>
     </div>

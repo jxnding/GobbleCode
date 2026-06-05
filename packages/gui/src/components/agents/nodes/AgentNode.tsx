@@ -3,8 +3,9 @@ import { Handle, Position, NodeProps } from "reactflow";
 import { motion, AnimatePresence } from "framer-motion";
 import { ChevronDown, Cpu, Zap, Wrench } from "lucide-react";
 import type { AgentNodeData, AgentModel } from "../../../stores/agentStore.js";
-import { AVAILABLE_MODELS } from "../../../stores/agentStore.js";
 import { useAgentStore } from "../../../stores/agentStore.js";
+import { ModelPickerList } from "../ModelPickerList.js";
+import { hintClass } from "../../../lib/hintClass.js";
 
 const SOCKET_COLORS: Record<string, string> = {
   task: "#F59E0B",
@@ -19,7 +20,7 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
   const [showTools, setShowTools] = useState(false);
   const updateNodeModel = useAgentStore((s) => s.updateNodeModel);
   const selectNode = useAgentStore((s) => s.selectNode);
-  const realModels = useAgentStore((s) => s.realModels);
+  const models = useAgentStore((s) => s.models);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   const handleModelChange = (model: AgentModel) => {
@@ -70,7 +71,7 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
 
       {/* Node Body */}
       <motion.div
-        className="rounded-lg overflow-hidden shadow-2xl"
+        className={`${hintClass("agent-node", id)} rounded-lg overflow-hidden shadow-2xl`}
         style={{
           width: 280,
           background: "#1a1a1a",
@@ -125,7 +126,7 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
               e.stopPropagation();
               setShowModelPicker(!showModelPicker);
             }}
-            className="w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 transition-colors text-left"
+            className={`${hintClass("agent-node", `${id}-model-picker`)} w-full flex items-center justify-between gap-2 px-2 py-1.5 rounded bg-white/5 hover:bg-white/10 transition-colors text-left`}
           >
             <div className="flex items-center gap-2 min-w-0">
               <div
@@ -152,51 +153,14 @@ const AgentNodeComponent = memo(({ data, id, selected }: NodeProps<AgentNodeData
                   marginLeft: "12px",
                 }}
               >
-                <div className="p-1 max-h-48 overflow-y-auto">
-                  {realModels.map((model) => (
-                    <button
-                      key={model.id}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleModelChange(model);
-                      }}
-                      className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
-                        model.id === data.model.id
-                          ? "bg-white/10 text-white"
-                          : "text-white/70 hover:bg-white/5 hover:text-white"
-                      }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs truncate">{model.name}</div>
-                        <div className="text-[10px] text-white/40">{model.provider}</div>
-                      </div>
-                      {model.id === data.model.id && (
-                        <div className="w-1.5 h-1.5 rounded-full bg-yellow-400" />
-                      )}
-                    </button>
-                  ))}
-
-                  {realModels.length === 0 && (
-                    <div className="text-[10px] text-white/30 px-2 py-1 leading-relaxed">
-                      No models configured. Add a provider with an API key to enable models.
-                    </div>
-                  )}
-
-                  <div className="text-[9px] text-white/25 uppercase tracking-wider px-2 pt-2 pb-1">
-                    Demo models
-                  </div>
-                  {AVAILABLE_MODELS.map((model) => (
-                    <div
-                      key={model.id}
-                      title="Demo model — add a provider with an API key to enable it"
-                      className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left opacity-40 cursor-not-allowed"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-xs truncate">{model.name}</div>
-                        <div className="text-[10px] text-white/40">{model.provider}</div>
-                      </div>
-                    </div>
-                  ))}
+                <div className="p-1 max-h-56 overflow-y-auto">
+                  <ModelPickerList
+                    models={models}
+                    selectedId={data.model.id}
+                    onSelect={handleModelChange}
+                    accentColor={data.color}
+                    compact
+                  />
                 </div>
               </motion.div>
             )}

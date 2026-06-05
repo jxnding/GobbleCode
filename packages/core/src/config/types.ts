@@ -3,15 +3,18 @@ import { z } from "zod";
 export const ModelProviderSchema = z.object({
   id: z.string(),
   name: z.string(),
-  npm: z.string(),
-  options: z.record(z.unknown()),
-  models: z.record(
-    z.object({
-      name: z.string(),
-      maxTokens: z.number().optional(),
-      contextWindow: z.number().optional(),
-    })
-  ),
+  npm: z.string().optional(),
+  env: z.array(z.string()).optional(),
+  options: z.record(z.unknown()).default({}),
+  models: z
+    .record(
+      z.object({
+        name: z.string(),
+        maxTokens: z.number().optional(),
+        contextWindow: z.number().optional(),
+      }),
+    )
+    .default({}),
 });
 export type ModelProvider = z.infer<typeof ModelProviderSchema>;
 
@@ -106,6 +109,9 @@ export const GobbleCodeConfigSchema = z.object({
   browser: BrowserConfigSchema,
   semantic: SemanticConfigSchema.optional(),
   disabledProviders: z.array(z.string()).optional(),
+  enabledProviders: z.array(z.string()).optional(),
+  /** Show element class names on hover (accessibility / debugging) */
+  hints: z.boolean().default(true),
 });
 export type GobbleCodeConfig = z.infer<typeof GobbleCodeConfigSchema>;
 
@@ -152,4 +158,5 @@ export const DEFAULT_CONFIG: GobbleCodeConfig = {
       model: "nomic-embed-text",
     },
   },
+  hints: true,
 };

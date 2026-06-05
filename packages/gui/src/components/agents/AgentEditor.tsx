@@ -21,6 +21,7 @@ import AnimatedEdge from "./nodes/AnimatedEdge.js";
 import { NodeSidebar } from "./NodeSidebar.js";
 import { PropertiesPanel } from "./PropertiesPanel.js";
 import { WavyText } from "../ui/WavyText.js";
+import { hintClass } from "../../lib/hintClass.js";
 
 const nodeTypes: NodeTypes = {
   agent: AgentNodeComponent,
@@ -104,14 +105,14 @@ export function AgentEditor() {
   );
 
   return (
-    <div className="h-full flex">
+    <div className={`${hintClass("agent-editor", "root")} h-full flex`}>
       {/* Node Sidebar */}
       <NodeSidebar />
 
       {/* Main Editor Area */}
       <div className="flex-1 flex flex-col">
         {/* Header */}
-        <div className="h-12 flex items-center justify-between px-4 bg-[#111] border-b border-white/5">
+        <div className={`${hintClass("agent-editor", "toolbar")} h-12 flex items-center justify-between px-4 bg-[#111] border-b border-white/5`}>
           <div className="flex items-center gap-3">
             <motion.div
               className="w-7 h-7 rounded-lg bg-yellow-400 flex items-center justify-center"
@@ -132,7 +133,7 @@ export function AgentEditor() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-xs text-white/60"
+              className={`${hintClass("agent-editor", "reset")} flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/5 hover:bg-white/10 transition-colors text-xs text-white/60`}
             >
               <RotateCcw className="w-3.5 h-3.5" />
               Reset
@@ -140,7 +141,7 @@ export function AgentEditor() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors text-xs"
+              className={`${hintClass("agent-editor", "run")} flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-green-500/20 text-green-400 hover:bg-green-500/30 transition-colors text-xs`}
             >
               <Play className="w-3.5 h-3.5" />
               Run Pipeline
@@ -148,7 +149,7 @@ export function AgentEditor() {
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 text-black hover:bg-yellow-500 transition-colors text-xs font-medium"
+              className={`${hintClass("agent-editor", "save")} flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-yellow-400 text-black hover:bg-yellow-500 transition-colors text-xs font-medium`}
             >
               <Save className="w-3.5 h-3.5" />
               Save
@@ -157,7 +158,7 @@ export function AgentEditor() {
         </div>
 
         {/* Graph Editor */}
-        <div className="flex-1 relative">
+        <div className={`${hintClass("agent-editor", "canvas")} flex-1 relative`}>
           <ReactFlow
             nodes={nodes}
             edges={edges}

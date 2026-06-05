@@ -1,6 +1,8 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Cpu, Wrench, FileText, Trash2 } from "lucide-react";
-import { useAgentStore, AVAILABLE_MODELS } from "../../stores/agentStore.js";
+import { useAgentStore } from "../../stores/agentStore.js";
+import { ModelPickerList } from "./ModelPickerList.js";
+import { hintClass } from "../../lib/hintClass.js";
 
 export function PropertiesPanel() {
   const selectedNode = useAgentStore((s) => s.selectedNode);
@@ -9,7 +11,7 @@ export function PropertiesPanel() {
   const updateNodeModel = useAgentStore((s) => s.updateNodeModel);
   const removeNode = useAgentStore((s) => s.removeNode);
   const selectNode = useAgentStore((s) => s.selectNode);
-  const realModels = useAgentStore((s) => s.realModels);
+  const models = useAgentStore((s) => s.models);
 
   const node = nodes.find((n) => n.id === selectedNode);
 
@@ -21,7 +23,7 @@ export function PropertiesPanel() {
           animate={{ x: 0, opacity: 1 }}
           exit={{ x: 300, opacity: 0 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          className="w-72 bg-[#111] border-l border-white/5 flex flex-col overflow-hidden"
+          className={`${hintClass("properties-panel", "root")} w-72 bg-[#111] border-l border-white/5 flex flex-col overflow-hidden`}
         >
           {/* Header */}
           <div
@@ -78,58 +80,12 @@ export function PropertiesPanel() {
                 <Cpu className="w-3 h-3" />
                 Model
               </label>
-              <div className="space-y-1">
-                {realModels.map((model) => (
-                  <button
-                    key={model.id}
-                    onClick={() => updateNodeModel(node.id, model.id)}
-                    className={`w-full flex items-center gap-2 px-2 py-1.5 rounded text-left transition-colors ${
-                      model.id === node.model.id
-                        ? "bg-white/10 text-white"
-                        : "text-white/60 hover:bg-white/5 hover:text-white"
-                    }`}
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{
-                        background: model.id === node.model.id ? node.color : "transparent",
-                        border: `1px solid ${model.id === node.model.id ? node.color : "#333"}`,
-                      }}
-                    />
-                    <div className="flex-1">
-                      <div className="text-xs">{model.name}</div>
-                      <div className="text-[10px] text-white/30">{model.provider}</div>
-                    </div>
-                  </button>
-                ))}
-
-                {realModels.length === 0 && (
-                  <p className="text-[10px] text-white/30 px-1 pb-1 leading-relaxed">
-                    No models configured. Add a provider with an API key to enable models.
-                  </p>
-                )}
-
-                <div className="text-[9px] text-white/25 uppercase tracking-wider px-1 pt-2 pb-1">
-                  Demo models (configure a provider to use)
-                </div>
-                {AVAILABLE_MODELS.map((model) => (
-                  <button
-                    key={model.id}
-                    disabled
-                    title="Demo model — add a provider with an API key to enable it"
-                    className="w-full flex items-center gap-2 px-2 py-1.5 rounded text-left opacity-40 cursor-not-allowed"
-                  >
-                    <div
-                      className="w-1.5 h-1.5 rounded-full"
-                      style={{ border: "1px solid #333" }}
-                    />
-                    <div className="flex-1">
-                      <div className="text-xs">{model.name}</div>
-                      <div className="text-[10px] text-white/30">{model.provider}</div>
-                    </div>
-                  </button>
-                ))}
-              </div>
+              <ModelPickerList
+                models={models}
+                selectedId={node.model.id}
+                onSelect={(model) => updateNodeModel(node.id, model.id)}
+                accentColor={node.color}
+              />
             </div>
 
             {/* Tools */}
@@ -188,7 +144,7 @@ export function PropertiesPanel() {
                 removeNode(node.id);
                 selectNode(null);
               }}
-              className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs"
+              className={`${hintClass("properties-panel", "delete-node")} w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500/20 transition-colors text-xs`}
             >
               <Trash2 className="w-3 h-3" />
               Delete Agent

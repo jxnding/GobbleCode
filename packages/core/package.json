@@ -37,6 +37,10 @@
     "./semantic": {
       "types": "./dist/semantic/index.d.ts",
       "import": "./dist/semantic/index.js"
+    },
+    "./models": {
+      "types": "./dist/models/index.d.ts",
+      "import": "./dist/models/index.js"
     }
   },
   "scripts": {

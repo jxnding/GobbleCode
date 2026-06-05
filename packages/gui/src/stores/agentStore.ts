@@ -1,13 +1,16 @@
 import { create } from "zustand";
-import { v4 as uuid } from "uuid";
 
 export type AgentRole = "orchestrator" | "worker" | "tester" | "searcher" | "custom";
 
 export interface AgentModel {
   id: string;
+  modelId: string;
+  providerId: string;
   name: string;
   provider: string;
+  connected: boolean;
   maxTokens?: number;
+  contextWindow?: number;
 }
 
 export interface AgentSocket {
@@ -42,25 +45,41 @@ export interface AgentEdge {
   targetSocket: string;
 }
 
-export const AVAILABLE_MODELS: AgentModel[] = [
-  { id: "claude-sonnet-4", name: "Claude Sonnet 4", provider: "anthropic" },
-  { id: "claude-opus-4", name: "Claude Opus 4", provider: "anthropic" },
-  { id: "gpt-4o", name: "GPT-4o", provider: "openai" },
-  { id: "gpt-4o-mini", name: "GPT-4o Mini", provider: "openai" },
-  { id: "deepseek-v4-flash", name: "DeepSeek V4 Flash", provider: "deepseek" },
-  { id: "deepseek-v4", name: "DeepSeek V4", provider: "deepseek" },
-  { id: "mimo-v2.5-pro", name: "Mimo V2.5 Pro", provider: "xiaomi" },
-  { id: "qwen3-235b", name: "Qwen3 235B", provider: "alibaba" },
-  { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", provider: "google" },
-  { id: "llama-4-maverick", name: "Llama 4 Maverick", provider: "meta" },
-];
+export interface ProviderSummary {
+  id: string;
+  name: string;
+  env: string[];
+  npm?: string;
+  connected: boolean;
+  modelCount: number;
+  catalogEndpoint?: string;
+  baseURL?: string;
+  hasStoredKey: boolean;
+  connectedViaEnv: boolean;
+}
 
-const ROLE_CONFIG: Record<AgentRole, { color: string; icon: string; defaultModel: string }> = {
-  orchestrator: { color: "#8B5CF6", icon: "🎯", defaultModel: "claude-sonnet-4" },
-  worker: { color: "#3B82F6", icon: "⚡", defaultModel: "deepseek-v4-flash" },
-  tester: { color: "#10B981", icon: "🧪", defaultModel: "gpt-4o-mini" },
-  searcher: { color: "#F59E0B", icon: "🔍", defaultModel: "gemini-2.5-pro" },
-  custom: { color: "#6B7280", icon: "🤖", defaultModel: "gpt-4o" },
+interface ProviderListPayload {
+  providers: ProviderSummary[];
+  models: AgentModel[];
+  connected: string[];
+  defaultModel: string | null;
+}
+
+const PLACEHOLDER_MODEL: AgentModel = {
+  id: "unconfigured",
+  modelId: "",
+  providerId: "",
+  name: "Loading models…",
+  provider: "",
+  connected: false,
+};
+
+const ROLE_CONFIG: Record<AgentRole, { color: string; icon: string; preferredProviders: string[] }> = {
+  orchestrator: { color: "#8B5CF6", icon: "🎯", preferredProviders: ["anthropic", "openai"] },
+  worker: { color: "#3B82F6", icon: "⚡", preferredProviders: ["deepseek", "anthropic", "openai"] },
+  tester: { color: "#10B981", icon: "🧪", preferredProviders: ["openai", "anthropic"] },
+  searcher: { color: "#F59E0B", icon: "🔍", preferredProviders: ["google", "openai"] },
+  custom: { color: "#6B7280", icon: "🤖", preferredProviders: ["openai"] },
 };
 
 function createSockets(role: AgentRole): { inputs: AgentSocket[]; outputs: AgentSocket[] } {
@@ -106,9 +125,7 @@ function createSockets(role: AgentRole): { inputs: AgentSocket[]; outputs: Agent
       };
     case "searcher":
       return {
-        inputs: [
-          { id: "query-in", name: "Query", type: "input", dataType: "task" },
-        ],
+        inputs: [{ id: "query-in", name: "Query", type: "input", dataType: "task" }],
         outputs: [
           { id: "results-out", name: "Results", type: "output", dataType: "search" },
           { id: "context-out", name: "Context", type: "output", dataType: "context" },
@@ -119,12 +136,45 @@ function createSockets(role: AgentRole): { inputs: AgentSocket[]; outputs: Agent
   }
 }
 
+function pickDefaultModel(role: AgentRole, models: AgentModel[]): AgentModel {
+  const config = ROLE_CONFIG[role];
+  for (const providerId of config.preferredProviders) {
+    const match = models.find((m) => m.providerId === providerId);
+    if (match) return match;
+  }
+  return models[0] ?? PLACEHOLDER_MODEL;
+}
+
+interface ElectronAPI {
+  getModels?: () => Promise<AgentModel[]>;
+  listProviders?: () => Promise<ProviderListPayload>;
+  updateProvider?: (
+    providerId: string,
+    credentials: { apiKey?: string; baseURL?: string },
+  ) => Promise<ProviderListPayload>;
+  setProviderApiKey?: (providerId: string, apiKey: string) => Promise<ProviderListPayload>;
+}
+
+function getElectronAPI(): ElectronAPI | undefined {
+  return (window as unknown as { electronAPI?: ElectronAPI }).electronAPI;
+}
+
 export interface AgentStore {
   nodes: AgentNodeData[];
   edges: AgentEdge[];
   selectedNode: string | null;
-  realModels: AgentModel[];
+  models: AgentModel[];
+  providers: ProviderSummary[];
+  connectedProviders: string[];
+  defaultModelId: string | null;
+  modelsLoaded: boolean;
   loadModels: () => Promise<void>;
+  updateProvider: (
+    providerId: string,
+    credentials: { apiKey?: string; baseURL?: string },
+  ) => Promise<void>;
+  /** @deprecated Use updateProvider */
+  setProviderApiKey: (providerId: string, apiKey: string) => Promise<void>;
   addNode: (role: AgentRole, position?: { x: number; y: number }) => void;
   removeNode: (id: string) => void;
   updateNode: (id: string, updates: Partial<AgentNodeData>) => void;
@@ -136,47 +186,61 @@ export interface AgentStore {
   getNodeById: (id: string) => AgentNodeData | undefined;
 }
 
+function createDefaultNode(
+  id: string,
+  role: AgentRole,
+  label: string,
+  description: string,
+  systemPrompt: string,
+  tools: string[],
+  position: { x: number; y: number },
+  model: AgentModel = PLACEHOLDER_MODEL,
+): AgentNodeData {
+  const config = ROLE_CONFIG[role];
+  return {
+    id,
+    role,
+    label,
+    description,
+    model,
+    systemPrompt,
+    tools,
+    sockets: createSockets(role),
+    color: config.color,
+    icon: config.icon,
+    position,
+  };
+}
+
 export const useAgentStore = create<AgentStore>((set, get) => ({
   nodes: [
-    {
-      id: "orchestrator-1",
-      role: "orchestrator",
-      label: "Orchestrator",
-      description: "Coordinates the workflow between agents",
-      model: AVAILABLE_MODELS.find((m) => m.id === "claude-sonnet-4")!,
-      systemPrompt: "You are the orchestrator. Delegate tasks to workers and testers.",
-      tools: ["read", "glob", "grep", "bash"],
-      sockets: createSockets("orchestrator"),
-      color: ROLE_CONFIG.orchestrator.color,
-      icon: ROLE_CONFIG.orchestrator.icon,
-      position: { x: 400, y: 50 },
-    },
-    {
-      id: "worker-1",
-      role: "worker",
-      label: "Worker",
-      description: "Implements code changes on git branches",
-      model: AVAILABLE_MODELS.find((m) => m.id === "deepseek-v4-flash")!,
-      systemPrompt: "You are the worker. Create a branch, implement changes, commit.",
-      tools: ["write", "edit", "bash", "git"],
-      sockets: createSockets("worker"),
-      color: ROLE_CONFIG.worker.color,
-      icon: ROLE_CONFIG.worker.icon,
-      position: { x: 150, y: 300 },
-    },
-    {
-      id: "tester-1",
-      role: "tester",
-      label: "Tester",
-      description: "Runs tests and validates changes",
-      model: AVAILABLE_MODELS.find((m) => m.id === "gpt-4o-mini")!,
-      systemPrompt: "You are the tester. Run tests, verify changes pass.",
-      tools: ["bash", "read", "glob", "grep"],
-      sockets: createSockets("tester"),
-      color: ROLE_CONFIG.tester.color,
-      icon: ROLE_CONFIG.tester.icon,
-      position: { x: 650, y: 300 },
-    },
+    createDefaultNode(
+      "orchestrator-1",
+      "orchestrator",
+      "Orchestrator",
+      "Coordinates the workflow between agents",
+      "You are the orchestrator. Delegate tasks to workers and testers.",
+      ["read", "glob", "grep", "bash"],
+      { x: 400, y: 50 },
+    ),
+    createDefaultNode(
+      "worker-1",
+      "worker",
+      "Worker",
+      "Implements code changes on git branches",
+      "You are the worker. Create a branch, implement changes, commit.",
+      ["write", "edit", "bash", "git"],
+      { x: 150, y: 300 },
+    ),
+    createDefaultNode(
+      "tester-1",
+      "tester",
+      "Tester",
+      "Runs tests and validates changes",
+      "You are the tester. Run tests, verify changes pass.",
+      ["bash", "read", "glob", "grep"],
+      { x: 650, y: 300 },
+    ),
   ],
   edges: [
     {
@@ -216,36 +280,84 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
     },
   ],
   selectedNode: null,
-  realModels: [],
+  models: [],
+  providers: [],
+  connectedProviders: [],
+  defaultModelId: null,
+  modelsLoaded: false,
 
   loadModels: async () => {
-    const api = (window as unknown as { electronAPI?: { getModels?: () => Promise<AgentModel[]> } })
-      .electronAPI;
-    if (!api?.getModels) return;
+    const api = getElectronAPI();
+    if (!api?.listProviders) {
+      if (api?.getModels) {
+        try {
+          const models = await api.getModels();
+          if (Array.isArray(models)) {
+            set({ models, modelsLoaded: true });
+          }
+        } catch {
+          // ignore
+        }
+      }
+      return;
+    }
+
     try {
-      const models = await api.getModels();
-      if (Array.isArray(models)) set({ realModels: models });
+      const result = await api.listProviders();
+      if (!result) return;
+
+      set({
+        models: result.models,
+        providers: result.providers,
+        connectedProviders: result.connected,
+        defaultModelId: result.defaultModel,
+        modelsLoaded: true,
+      });
+
+      set((state) => ({
+        nodes: state.nodes.map((node) => {
+          if (node.model.id !== "unconfigured") return node;
+          return { ...node, model: pickDefaultModel(node.role, result.models) };
+        }),
+      }));
     } catch {
-      // ignore — fall back to no configured models
+      // ignore
     }
   },
 
+  setProviderApiKey: async (providerId, apiKey) => {
+    await get().updateProvider(providerId, { apiKey });
+  },
+
+  updateProvider: async (providerId, credentials) => {
+    const api = getElectronAPI();
+    if (!api?.updateProvider && !api?.setProviderApiKey) return;
+
+    const result = api.updateProvider
+      ? await api.updateProvider(providerId, credentials)
+      : await api.setProviderApiKey!(providerId, credentials.apiKey ?? "");
+
+    set({
+      providers: result.providers,
+      models: result.models,
+      connectedProviders: result.connected,
+      defaultModelId: result.defaultModel,
+    });
+  },
+
   addNode: (role, position) => {
-    const config = ROLE_CONFIG[role];
+    const models = get().models;
     const id = `${role}-${Date.now()}`;
-    const newNode: AgentNodeData = {
+    const newNode = createDefaultNode(
       id,
       role,
-      label: role.charAt(0).toUpperCase() + role.slice(1),
-      description: "",
-      model: AVAILABLE_MODELS.find((m) => m.id === config.defaultModel)!,
-      systemPrompt: "",
-      tools: [],
-      sockets: createSockets(role),
-      color: config.color,
-      icon: config.icon,
-      position: position || { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
-    };
+      role.charAt(0).toUpperCase() + role.slice(1),
+      "",
+      "",
+      [],
+      position || { x: 300 + Math.random() * 200, y: 200 + Math.random() * 200 },
+      pickDefaultModel(role, models),
+    );
     set((state) => ({ nodes: [...state.nodes, newNode] }));
   },
 
@@ -264,7 +376,7 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   },
 
   updateNodeModel: (id, modelId) => {
-    const model = [...get().realModels, ...AVAILABLE_MODELS].find((m) => m.id === modelId);
+    const model = get().models.find((m) => m.id === modelId);
     if (model) {
       set((state) => ({
         nodes: state.nodes.map((n) => (n.id === id ? { ...n, model } : n)),
@@ -281,8 +393,8 @@ export const useAgentStore = create<AgentStore>((set, get) => ({
   selectNode: (id) => set({ selectedNode: id }),
 
   addEdge: (edge) => {
-    const id = `edge-${Date.now()}`;
-    set((state) => ({ edges: [...state.edges, { ...edge, id }] }));
+    const edgeId = `edge-${Date.now()}`;
+    set((state) => ({ edges: [...state.edges, { ...edge, id: edgeId }] }));
   },
 
   removeEdge: (id) => {

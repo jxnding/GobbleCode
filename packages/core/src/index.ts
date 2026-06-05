@@ -14,3 +14,5 @@ export { SearchManager } from "./search/manager.js";
 export { SoundManager } from "./sound/manager.js";
 export { SyncManager } from "./sync/manager.js";
 export { SemanticManager } from "./semantic/manager.js";
+export { ModelManager, ModelsCatalog } from "./models/index.js";
+export type { ListedModel, PublicProvider, ProviderListResult, ProviderCredentials } from "./models/index.js";

@@ -7,13 +7,18 @@ import {
   Cloud,
   Shield,
   Zap,
+  Cpu,
   Sun,
   Moon,
   Monitor,
   Check,
   AlertTriangle,
+  MousePointer2,
 } from "lucide-react";
 import { WavyText } from "../ui/WavyText.js";
+import { ModelsSettings } from "./ModelsSettings.js";
+import { useSettingsStore } from "../../stores/settingsStore.js";
+import { hintClass } from "../../lib/hintClass.js";
 
 type Theme = "dark" | "light" | "auto";
 
@@ -23,6 +28,7 @@ export function SettingsView() {
   const [yoloMode, setYoloMode] = useState(true);
 
   const tabs = [
+    { id: "models", label: "Models", icon: Cpu },
     { id: "permissions", label: "Permissions", icon: Shield },
     { id: "appearance", label: "Appearance", icon: Palette },
     { id: "sound", label: "Sound", icon: Volume2 },
@@ -31,7 +37,7 @@ export function SettingsView() {
   ];
 
   return (
-    <div className="h-full flex flex-col">
+    <div className={`${hintClass("settings", "root")} h-full flex flex-col`}>
       {/* Header */}
       <div className="p-4 border-b border-[var(--border)]">
         <div className="flex items-center gap-3">
@@ -54,7 +60,7 @@ export function SettingsView() {
       {/* Content */}
       <div className="flex-1 flex overflow-hidden">
         {/* Tabs */}
-        <aside className="w-52 border-r border-[var(--border)] p-2">
+        <aside className={`${hintClass("settings", "tabs")} w-52 border-r border-[var(--border)] p-2`}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive = activeTab === tab.id;
@@ -63,7 +69,7 @@ export function SettingsView() {
                 key={tab.id}
                 whileHover={{ x: 4 }}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                className={`${hintClass("settings", `tab-${tab.id}`)} w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
                   isActive
                     ? "bg-[var(--accent)] text-[var(--bg)] font-medium"
                     : "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--surface-hover)]"
@@ -77,8 +83,9 @@ export function SettingsView() {
         </aside>
 
         {/* Settings Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className={`${hintClass("settings", "content")} flex-1 overflow-y-auto p-6`}>
           <AnimatePresence mode="wait">
+            {activeTab === "models" && <ModelsSettings />}
             {activeTab === "permissions" && <PermissionsSettings yoloMode={yoloMode} setYoloMode={setYoloMode} />}
             {activeTab === "appearance" && <AppearanceSettings theme={theme} setTheme={setTheme} />}
             {activeTab === "sound" && <SoundSettings />}
@@ -155,7 +162,7 @@ function PermissionsSettings({
                 )}
               </div>
             </div>
-            <Toggle enabled={yoloMode} onToggle={() => setYoloMode(!yoloMode)} />
+            <Toggle enabled={yoloMode} onToggle={() => setYoloMode(!yoloMode)} hintName="yolo-toggle" />
           </div>
         </div>
       </section>
@@ -233,6 +240,8 @@ function AppearanceSettings({
   theme: Theme;
   setTheme: (t: Theme) => void;
 }) {
+  const hints = useSettingsStore((s) => s.hints);
+  const setHints = useSettingsStore((s) => s.setHints);
   const [accent, setAccent] = useState("#fbbf24");
 
   const selectAccent = (color: string) => {
@@ -303,7 +312,7 @@ function AppearanceSettings({
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
                 onClick={() => setTheme(t.id)}
-                className={`relative p-4 rounded-xl border-2 transition-all ${
+                className={`${hintClass("settings", `theme-${t.id}`)} relative p-4 rounded-xl border-2 transition-all ${
                   isActive
                     ? "border-[var(--accent)] shadow-lg shadow-[var(--accent)]/10"
                     : "border-[var(--border)] hover:border-[var(--text-muted)]"
@@ -406,6 +415,31 @@ function AppearanceSettings({
               </span>
             </motion.button>
           ))}
+        </div>
+      </section>
+
+      {/* Hints */}
+      <section>
+        <h2 className="text-base font-semibold mb-1">Hints</h2>
+        <p className="text-sm text-[var(--text-muted)] mb-4">
+          Show CSS class names on hover for buttons and panels — useful for accessibility and
+          debugging
+        </p>
+        <div
+          className={`${hintClass("settings", "hints-toggle-row")} flex items-center justify-between p-4 rounded-xl border border-[var(--border)] bg-[var(--surface)]`}
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-[var(--accent)]/15 flex items-center justify-center">
+              <MousePointer2 className="w-4 h-4 text-[var(--accent)]" />
+            </div>
+            <div>
+              <div className="text-sm font-medium">Element hints</div>
+              <div className="text-xs text-[var(--text-muted)]">
+                Hover any button or box to see its class name
+              </div>
+            </div>
+          </div>
+          <Toggle enabled={hints} onToggle={() => setHints(!hints)} hintName="hints-toggle" />
         </div>
       </section>
 
@@ -677,11 +711,19 @@ function SyncSettings() {
 
 /* ─────────────────────────── TOGGLE COMPONENT ─────────────────────────── */
 
-function Toggle({ enabled, onToggle }: { enabled: boolean; onToggle: () => void }) {
+function Toggle({
+  enabled,
+  onToggle,
+  hintName = "toggle",
+}: {
+  enabled: boolean;
+  onToggle: () => void;
+  hintName?: string;
+}) {
   return (
     <button
       onClick={onToggle}
-      className={`relative w-12 h-6 rounded-full transition-colors ${
+      className={`${hintClass("settings", hintName)} relative w-12 h-6 rounded-full transition-colors ${
         enabled ? "bg-[var(--accent)]" : "bg-[var(--surface-hover)]"
       }`}
     >
